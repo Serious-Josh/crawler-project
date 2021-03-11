@@ -1,3 +1,5 @@
+//too lazy to actually change project name, so dataStructures_finalProject it will remain even though it's now a personal project
+
 #pragma once
 #include "Menu.h"
 #include <iostream>

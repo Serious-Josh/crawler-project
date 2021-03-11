@@ -115,6 +115,7 @@ public:
 				}
 			}
 
+
 			play.setTempHP(0);
 			enem.setTempHP(0);
 

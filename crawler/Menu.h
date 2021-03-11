@@ -17,13 +17,11 @@ public:
 class inventoryMenu : public menu {
 
 	player play;
-	stack<menu*> menuSystem;
 
 public:
 
-	inventoryMenu(player& player, const stack<menu*> menuSystem) {
+	inventoryMenu(player& player) {
 		play = player;
-		this->menuSystem = menuSystem;
 	}
 
 	void displayMenu() {
@@ -65,11 +63,11 @@ private:
 	player* play;
 	enemy* enem;
 	int count;
-	stack<menu*> menuSystem;
+	stack<menu*>* menuSystem;
 
 public:
 
-	battleMenu(player* player, enemy* enemy, int count, stack<menu*> menuSystem) {
+	battleMenu(player* player, enemy* enemy, int count, stack<menu*>* menuSystem) {
 		play = player;
 		this->enem = enemy;
 		this->count = count;
@@ -82,7 +80,7 @@ public:
 		if (play->getHP() == 0) {
 			system("CLS");
 			cout << "YOU DIED" << endl << endl;
-			menuSystem.pop();
+			menuSystem->pop();
 			exit(1);
 		}
 		else if (enem->getHP() == 0) {
@@ -91,8 +89,8 @@ public:
 			cout << "You gained " << enem->getEXP() << "exp!" << endl;
 			system("PAUSE");
 			system("CLS");
-			menuSystem.pop();
-			menuSystem.top()->displayMenu();
+			menuSystem->pop();
+			menuSystem->top()->displayMenu();
 			return;
 		}
 		else {
@@ -138,7 +136,7 @@ public:
 				cin.clear();
 				cin.ignore(1000, '\n');
 				cout << "That's not a valid option. Please try again." << endl << endl;
-				menuSystem.top()->displayMenu();
+				menuSystem->top()->displayMenu();
 			}
 			else {
 				switch (input) {
@@ -149,29 +147,29 @@ public:
 						play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
 					}
 
-					menuSystem.top()->displayMenu();
+					menuSystem->top()->displayMenu();
 				}
 				case 2:
 				{
 					play->guardFun(2);
 					play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
-					menuSystem.top()->displayMenu();
+					menuSystem->top()->displayMenu();
 				}
 				case 3:
 				{
 					system("CLS");
 					cout << enem << endl << endl;
 					system("PAUSE");
-					menuSystem.top()->displayMenu();
+					menuSystem->top()->displayMenu();
 				}
 				case 4:
 				{
 					system("CLS");
-					inventoryMenu* inMenu = new inventoryMenu(*play, menuSystem);
-					menuSystem.push(inMenu);
-					menuSystem.top()->displayMenu();
-					menuSystem.pop();
-					menuSystem.top()->displayMenu();
+					inventoryMenu* inMenu = new inventoryMenu(*play);
+					menuSystem->push(inMenu);
+					menuSystem->top()->displayMenu();
+					menuSystem->pop();
+					menuSystem->top()->displayMenu();
 				}
 				}
 			}
@@ -189,11 +187,11 @@ private:
 	//i don't know why I couldn't name it boss, but it's bose now
 	boss *bose;
 	int count;
-	stack<menu*> menuSystem;
+	stack<menu*>* menuSystem;
 
 public:
 
-	bossMenu(player* player, boss* b, int count, stack<menu*> menuSystem) {
+	bossMenu(player* player, boss* b, int count, stack<menu*>* menuSystem) {
 	
 		play = player;
 		bose = b;
@@ -218,8 +216,8 @@ public:
 			cout << "You defeated " << bose->getName() << "!" << endl;
 			cout << "You gained " << bose->getEXP() << "!" << endl;
 			system("PAUSE");
-			menuSystem.pop();
-			menuSystem.top()->displayMenu();
+			menuSystem->pop();
+			menuSystem->top()->displayMenu();
 		}
 		else {
 
@@ -255,7 +253,7 @@ public:
 				cin.clear();
 				cin.ignore(1000, '\n');
 				cout << "That's not a valid option. Please try again." << endl << endl;
-				menuSystem.top()->displayMenu();
+				menuSystem->top()->displayMenu();
 			}
 			else {
 				switch (input) {
@@ -264,27 +262,27 @@ public:
 						play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
 					}
 
-					menuSystem.top()->displayMenu();
+					menuSystem->top()->displayMenu();
 				}
 
 				case 2: {play->guardFun(2);
 					play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
-					menuSystem.top()->displayMenu();
+					menuSystem->top()->displayMenu();
 				}
 
 				case 3: {system("CLS");
 					cout << bose << endl << endl;
 					system("PAUSE");
 					system("CLS");
-					menuSystem.top()->displayMenu();
+					menuSystem->top()->displayMenu();
 				}
 
 				case 4: {system("CLS");
-					inventoryMenu* inMenu = new inventoryMenu(*play, menuSystem);
-					menuSystem.push(inMenu);
-					menuSystem.top()->displayMenu();
-					menuSystem.pop();
-					menuSystem.top()->displayMenu();
+					inventoryMenu* inMenu = new inventoryMenu(*play);
+					menuSystem->push(inMenu);
+					menuSystem->top()->displayMenu();
+					menuSystem->pop();
+					menuSystem->top()->displayMenu();
 				}
 
 				}
@@ -295,7 +293,7 @@ public:
 };
 
 
-void generateEvent(player* player, stack<menu*> menuSystem) {
+void generateEvent(player* player, stack<menu*>* menuSystem) {
 
 	int num = rand() % 41;
 
@@ -303,20 +301,16 @@ void generateEvent(player* player, stack<menu*> menuSystem) {
 	if (num < 30) {
 		enemy* enem = new enemy(0);
 		battleMenu* battle = new battleMenu(player, enem, 0, menuSystem);
-		menuSystem.push(battle);
-		battleMenu* battleMen = new battleMenu(player, enem, 0, menuSystem);
-		menuSystem.push(battleMen);
-		menuSystem.top()->displayMenu();
+		menuSystem->push(battle);
+		menuSystem->top()->displayMenu();
 
 	}
 	else if ((num > 29) && (num < 35)) {
 		boss* bose = new boss(0);
 		bossMenu* bossM = new bossMenu(player, bose, 0, menuSystem);
-		menuSystem.push(bossM);
-		bossMenu* bossMen = new bossMenu(player, bose, 0, menuSystem);
-		menuSystem.push(bossMen);
+		menuSystem->push(bossM);
 		system("CLS");
-		menuSystem.top()->displayMenu();
+		menuSystem->top()->displayMenu();
 
 	}
 	else if((num > 34) && (num < 40)) {
@@ -363,17 +357,13 @@ class mMenu : public menu {
 
 	player* play;
 	vector<vector<int>> graph;
-	stack<menu*> menuSystem;
+	stack<menu*>* menuSystem;
 
 public:
 
-	mMenu(player* player, vector<vector<int>> graph, stack<menu*> menuSystem) {
+	mMenu(player* player, vector<vector<int>> graph, stack<menu*>* menuSystem) {
 		play = player;
 		this->graph = graph;
-		this->menuSystem = menuSystem;
-	}
-
-	void setStack(stack<menu*> menuSystem) {
 		this->menuSystem = menuSystem;
 	}
 
@@ -394,7 +384,7 @@ public:
 			cin.ignore();
 			cin.clear(1000, 'n');
 			cout << "That's not a valid option. Please try again." << endl;
-			menuSystem.top()->displayMenu();
+			menuSystem->top()->displayMenu();
 		}
 
 		switch (input) {
@@ -408,7 +398,7 @@ public:
 			//menuSystem.push(m);
 			//mMenu* m1 = new mMenu(play, graph, menuSystem);
 			//menuSystem.push(m1);
-			menuSystem.top()->displayMenu();
+			menuSystem->top()->displayMenu();
 		}
 
 		//quit game

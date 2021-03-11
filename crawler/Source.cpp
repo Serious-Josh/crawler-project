@@ -11,7 +11,7 @@
 using namespace std;
 
 vector<vector<int>> graph;
-stack<menu*> menuStack;
+stack<menu*>* menuStack = new stack<menu*>;
 
 void initializeGraph(vector<vector<int>>& graph) {
 
@@ -116,14 +116,10 @@ int main()
 	play->addWeapon(ptr3);
 
 
-	//dummy menu so that we can have something in the menuStack when we pass it as a parameter for the real main menu
-	mMenu* setup = new mMenu(play, graph, menuStack);
-	menuStack.push(setup);
-
 	mMenu* main = new mMenu(play, graph, menuStack);
-	menuStack.push(main);
+	menuStack->push(main);
 
-	menuStack.top()->displayMenu();
+	menuStack->top()->displayMenu();
 
 
 	return 0;

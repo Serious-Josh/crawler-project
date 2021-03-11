@@ -1,5 +1,3 @@
-//too lazy to actually change project name, so dataStructures_finalProject it will remain even though it's now a personal project
-
 #pragma once
 #include "Menu.h"
 #include <iostream>
@@ -117,11 +115,16 @@ int main()
 	weapon* ptr3 = new weapon;
 	play->addWeapon(ptr3);
 
+
+	//dummy menu so that we can have something in the menuStack when we pass it as a parameter for the real main menu
+	mMenu* setup = new mMenu(play, graph, menuStack);
+	menuStack.push(setup);
+
 	mMenu* main = new mMenu(play, graph, menuStack);
 	menuStack.push(main);
+
 	menuStack.top()->displayMenu();
 
-	//mainMenu(player);
 
 	return 0;
 	

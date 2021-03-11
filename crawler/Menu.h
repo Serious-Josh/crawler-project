@@ -10,7 +10,6 @@ class menu {
 
 public:
 
-	//so for some reason when this function plays, it pops the menuSystem, for god knows what reason
 	virtual void displayMenu() = 0;
 
 };
@@ -39,19 +38,19 @@ public:
 
 		//switch statement that handles the different options
 		switch (input) {
-		case 1: 			system("CLS");
+		case 1:
+			system("CLS");
 			play.outputWeapons();
 			system("PAUSE");
 			system("CLS");
 
-			menuSystem.top()->displayMenu();
-
-		case 2:				system("CLS");
+		case 2:
+			system("CLS");
 			play.outputArmor();
 			system("PAUSE");
 			system("CLS");
-			menuSystem.top()->displayMenu();
-		case 3:	menuSystem.pop();
+
+		case 3:
 			break;
 		}
 	}
@@ -92,6 +91,7 @@ public:
 			cout << "You gained " << enem->getEXP() << "exp!" << endl;
 			system("PAUSE");
 			system("CLS");
+			menuSystem.pop();
 			menuSystem.top()->displayMenu();
 			return;
 		}
@@ -148,16 +148,13 @@ public:
 					if (enem->getHP() > 0) {
 						play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
 					}
-					battleMenu* newBat = new battleMenu(play, enem, 1, menuSystem);
-					menuSystem.push(newBat);
+
 					menuSystem.top()->displayMenu();
 				}
 				case 2:
 				{
 					play->guardFun(2);
 					play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
-					battleMenu* newBat = new battleMenu(play, enem, 1, menuSystem);
-					menuSystem.push(newBat);
 					menuSystem.top()->displayMenu();
 				}
 				case 3:
@@ -165,21 +162,15 @@ public:
 					system("CLS");
 					cout << enem << endl << endl;
 					system("PAUSE");
-					battleMenu* newBat = new battleMenu(play, enem, 0, menuSystem);
-					menuSystem.push(newBat);
 					menuSystem.top()->displayMenu();
 				}
 				case 4:
 				{
 					system("CLS");
-					//for whatever reason I was stuck troubleshooting because I forgot I had to make it a pointer to pass it to a stack that holds pointers :/
-					battleMenu* newBat = new battleMenu(play, enem, 0, menuSystem);
-					menuSystem.push(newBat);
 					inventoryMenu* inMenu = new inventoryMenu(*play, menuSystem);
 					menuSystem.push(inMenu);
 					menuSystem.top()->displayMenu();
-					cout << endl << endl;
-					system("PAUSE");
+					menuSystem.pop();
 					menuSystem.top()->displayMenu();
 				}
 				}
@@ -228,7 +219,7 @@ public:
 			cout << "You gained " << bose->getEXP() << "!" << endl;
 			system("PAUSE");
 			menuSystem.pop();
-
+			menuSystem.top()->displayMenu();
 		}
 		else {
 
@@ -273,18 +264,11 @@ public:
 						play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
 					}
 
-					bossMenu* newBoss = new bossMenu(play, bose, 1, menuSystem);
-					menuSystem.pop();
-					menuSystem.push(newBoss);
 					menuSystem.top()->displayMenu();
 				}
 
 				case 2: {play->guardFun(2);
 					play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
-
-					bossMenu* newBoss1 = new bossMenu(play, bose, 1, menuSystem);
-					menuSystem.pop();
-					menuSystem.push(newBoss1);
 					menuSystem.top()->displayMenu();
 				}
 
@@ -292,17 +276,17 @@ public:
 					cout << bose << endl << endl;
 					system("PAUSE");
 					system("CLS");
-
-					bossMenu* bMenu = new bossMenu(play, bose, 0, menuSystem);
-					menuSystem.push(bMenu);
 					menuSystem.top()->displayMenu();
 				}
 
 				case 4: {system("CLS");
-					inventoryMenu* invMenu = new inventoryMenu(*play, menuSystem);
-					menuSystem.push(invMenu);
+					inventoryMenu* inMenu = new inventoryMenu(*play, menuSystem);
+					menuSystem.push(inMenu);
+					menuSystem.top()->displayMenu();
+					menuSystem.pop();
 					menuSystem.top()->displayMenu();
 				}
+
 				}
 			}
 		}
@@ -319,16 +303,19 @@ void generateEvent(player* player, stack<menu*> menuSystem) {
 	if (num < 30) {
 		enemy* enem = new enemy(0);
 		battleMenu* battle = new battleMenu(player, enem, 0, menuSystem);
-
 		menuSystem.push(battle);
+		battleMenu* battleMen = new battleMenu(player, enem, 0, menuSystem);
+		menuSystem.push(battleMen);
 		menuSystem.top()->displayMenu();
 
 	}
 	else if ((num > 29) && (num < 35)) {
 		boss* bose = new boss(0);
 		bossMenu* bossM = new bossMenu(player, bose, 0, menuSystem);
-
 		menuSystem.push(bossM);
+		bossMenu* bossMen = new bossMenu(player, bose, 0, menuSystem);
+		menuSystem.push(bossMen);
+		system("CLS");
 		menuSystem.top()->displayMenu();
 
 	}
@@ -380,9 +367,13 @@ class mMenu : public menu {
 
 public:
 
-	mMenu(player* player, vector<vector<int>> graph, const stack<menu*> menuSystem) {
+	mMenu(player* player, vector<vector<int>> graph, stack<menu*> menuSystem) {
 		play = player;
 		this->graph = graph;
+		this->menuSystem = menuSystem;
+	}
+
+	void setStack(stack<menu*> menuSystem) {
 		this->menuSystem = menuSystem;
 	}
 
@@ -407,16 +398,20 @@ public:
 		}
 
 		switch (input) {
+
+			//move rooms
 		case 1:
 		{
 			play->moveLocation(graph);
 			generateEvent(play, menuSystem);
-			mMenu* m = new mMenu(play, graph, menuSystem);
-			menuSystem.push(m);
-			mMenu* m1 = new mMenu(play, graph, menuSystem);
-			menuSystem.push(m1);
+			//mMenu* m = new mMenu(play, graph, menuSystem);
+			//menuSystem.push(m);
+			//mMenu* m1 = new mMenu(play, graph, menuSystem);
+			//menuSystem.push(m1);
 			menuSystem.top()->displayMenu();
 		}
+
+		//quit game
 		case 2: exit(0);
 		}
 

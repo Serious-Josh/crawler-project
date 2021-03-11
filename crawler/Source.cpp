@@ -89,11 +89,14 @@ int main()
 	string name;
 
 	cin >> name;
+	
+	player* play = new player();
 
-	player player(name);
+	play->setName(name);
+
 	system("CLS");
 
-	cout << player.getName() << " huh... I'll be honest, I thought it would be much more nyarly and intimidating, but I suppose " << player.getName() << " will do. Come on!" << endl;
+	cout << play->getName() << " huh... I'll be honest, I thought it would be much more nyarly and intimidating, but I suppose " << play->getName() << " will do. Come on!" << endl;
 
 	system("PAUSE");
 	system("CLS");
@@ -107,14 +110,14 @@ int main()
 	//example for how to create new  equipment and how to equip them
 	//they can be added to a players inventory through the player.addWeapon(armor*) / player.adArmor(armor*) functions
 	armor* ptr = new armor;
-	player.equipArmor(ptr);
+	play->equipArmor(ptr);
 
 	weapon* ptr2 = new weapon;
-	player.equipWeapon(ptr2);
+	play->equipWeapon(ptr2);
 	weapon* ptr3 = new weapon;
-	player.addWeapon(ptr3);
+	play->addWeapon(ptr3);
 
-	mMenu* main = new mMenu(player, graph, menuStack);
+	mMenu* main = new mMenu(play, graph, menuStack);
 	menuStack.push(main);
 	menuStack.top()->displayMenu();
 

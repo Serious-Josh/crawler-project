@@ -63,14 +63,14 @@ class battleMenu : public menu {
 
 private:
 
-	player play;
-	enemy enem;
+	player* play;
+	enemy* enem;
 	int count;
 	stack<menu*> menuSystem;
 
 public:
 
-	battleMenu(player player, enemy enemy, int count, stack<menu*> menuSystem) {
+	battleMenu(player* player, enemy* enemy, int count, stack<menu*> menuSystem) {
 		play = player;
 		this->enem = enemy;
 		this->count = count;
@@ -80,16 +80,16 @@ public:
 	void displayMenu() {
 
 
-		if (play.getHP() == 0) {
+		if (play->getHP() == 0) {
 			system("CLS");
 			cout << "YOU DIED" << endl << endl;
 			menuSystem.pop();
 			exit(1);
 		}
-		else if (enem.getHP() == 0) {
+		else if (enem->getHP() == 0) {
 			system("CLS");
-			cout << "You defeated " << enem.getName() << "!" << endl;
-			cout << "You gained " << enem.getEXP() << "exp!" << endl;
+			cout << "You defeated " << enem->getName() << "!" << endl;
+			cout << "You gained " << enem->getEXP() << "exp!" << endl;
 			system("PAUSE");
 			system("CLS");
 			menuSystem.top()->displayMenu();
@@ -101,8 +101,8 @@ public:
 
 			int temp, temp1;
 
-			temp = (enem.getTempHP() - enem.getHP());
-			temp1 = (play.getTempHP() - enem.getHP());
+			temp = (enem->getTempHP() - enem->getHP());
+			temp1 = (play->getTempHP() - enem->getHP());
 
 
 			if ((count != 0) && (count != -1)) {
@@ -116,14 +116,14 @@ public:
 			}
 
 
-			play.setTempHP(0);
-			enem.setTempHP(0);
+			play->setTempHP(0);
+			enem->setTempHP(0);
 
-			play.guardFun(1);
+			play->guardFun(1);
 
 			int input;
 
-			play.displayPlayerBattle();
+			play->displayPlayerBattle();
 
 			cout << "1. Attack" << endl;
 			cout << "2. Guard" << endl;
@@ -144,9 +144,9 @@ public:
 				switch (input) {
 				case 1:
 				{
-					enem.enemyDamage(play.playerAttack(enem.getArmor()));
-					if (enem.getHP() > 0) {
-						play.playerDamage(enem.enemyAttack(play.getGuardArmor()));
+					enem->enemyDamage(play->playerAttack(enem->getArmor()));
+					if (enem->getHP() > 0) {
+						play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
 					}
 					battleMenu* newBat = new battleMenu(play, enem, 1, menuSystem);
 					menuSystem.push(newBat);
@@ -154,8 +154,8 @@ public:
 				}
 				case 2:
 				{
-					play.guardFun(2);
-					play.playerDamage(enem.enemyAttack(play.getGuardArmor()));
+					play->guardFun(2);
+					play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
 					battleMenu* newBat = new battleMenu(play, enem, 1, menuSystem);
 					menuSystem.push(newBat);
 					menuSystem.top()->displayMenu();
@@ -175,7 +175,7 @@ public:
 					//for whatever reason I was stuck troubleshooting because I forgot I had to make it a pointer to pass it to a stack that holds pointers :/
 					battleMenu* newBat = new battleMenu(play, enem, 0, menuSystem);
 					menuSystem.push(newBat);
-					inventoryMenu* inMenu = new inventoryMenu(play, menuSystem);
+					inventoryMenu* inMenu = new inventoryMenu(*play, menuSystem);
 					menuSystem.push(inMenu);
 					menuSystem.top()->displayMenu();
 					cout << endl << endl;
@@ -194,14 +194,15 @@ class bossMenu : public menu {
 
 private:
 
-	player play;
-	boss bose;
+	player *play;
+	//i don't know why I couldn't name it boss, but it's bose now
+	boss *bose;
 	int count;
 	stack<menu*> menuSystem;
 
 public:
 
-	bossMenu(player player, boss b, int count, stack<menu*> menuSystem) {
+	bossMenu(player* player, boss* b, int count, stack<menu*> menuSystem) {
 	
 		play = player;
 		bose = b;
@@ -213,18 +214,18 @@ public:
 	void displayMenu() {
 
 		if (count == -1) {
-			bose.enemyIntro(bose.getID());
+			bose->enemyIntro(bose->getID());
 		}
 
-		if (play.getHP() == 0) {
+		if (play->getHP() == 0) {
 			system("CLS");
 			cout << "YOU DIED" << endl << endl;
 			exit(0);
 		}
-		else if (bose.getHP() == 0) {
+		else if (bose->getHP() == 0) {
 			system("CLS");
-			cout << "You defeated " << bose.getName() << "!" << endl;
-			cout << "You gained " << bose.getEXP() << "!" << endl;
+			cout << "You defeated " << bose->getName() << "!" << endl;
+			cout << "You gained " << bose->getEXP() << "!" << endl;
 			system("PAUSE");
 			menuSystem.pop();
 
@@ -232,23 +233,23 @@ public:
 		else {
 
 			if ((count != 0) && (count != -1)) {
-				if ((bose.getTempHP() - bose.getHP()) > 0) {
-					cout << "You dealt " << play.playerAttack(bose.getTempArmor()) << " damage!" << endl;
+				if ((bose->getTempHP() - bose->getHP()) > 0) {
+					cout << "You dealt " << play->playerAttack(bose->getTempArmor()) << " damage!" << endl;
 				}
 
-				if ((play.getTempHP() - play.getHP()) > 0) {
-					cout << "You took " << (play.getTempHP() - play.getHP()) << " damage!" << endl << endl;
+				if ((play->getTempHP() - play->getHP()) > 0) {
+					cout << "You took " << (play->getTempHP() - play->getHP()) << " damage!" << endl << endl;
 				}
 			}
 
-			play.setTempHP(0);
-			bose.setTempHP(0);
+			play->setTempHP(0);
+			bose->setTempHP(0);
 
-			play.guardFun(1);
+			play->guardFun(1);
 
 			int input;
 
-			play.displayPlayerBattle();
+			play->displayPlayerBattle();
 
 			cout << "1. Attack" << endl;
 			cout << "2. Guard" << endl;
@@ -267,9 +268,9 @@ public:
 			}
 			else {
 				switch (input) {
-				case 1: {bose.enemyDamage(play.playerAttack(bose.getArmor()));
-					if (bose.getHP() > 0) {
-						play.playerDamage(bose.bossAttack(bose.getID(), play.getGuardArmor()));
+				case 1: {bose->enemyDamage(play->playerAttack(bose->getArmor()));
+					if (bose->getHP() > 0) {
+						play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
 					}
 
 					bossMenu* newBoss = new bossMenu(play, bose, 1, menuSystem);
@@ -278,8 +279,8 @@ public:
 					menuSystem.top()->displayMenu();
 				}
 
-				case 2: {play.guardFun(2);
-					play.playerDamage(bose.bossAttack(bose.getID(), play.getGuardArmor()));
+				case 2: {play->guardFun(2);
+					play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
 
 					bossMenu* newBoss1 = new bossMenu(play, bose, 1, menuSystem);
 					menuSystem.pop();
@@ -298,7 +299,7 @@ public:
 				}
 
 				case 4: {system("CLS");
-					inventoryMenu* invMenu = new inventoryMenu(play, menuSystem);
+					inventoryMenu* invMenu = new inventoryMenu(*play, menuSystem);
 					menuSystem.push(invMenu);
 					menuSystem.top()->displayMenu();
 				}
@@ -310,22 +311,22 @@ public:
 };
 
 
-void generateEvent(player player, stack<menu*> menuSystem) {
+void generateEvent(player* player, stack<menu*> menuSystem) {
 
 	int num = rand() % 41;
 
 	//chance for normal enemy
 	if (num < 30) {
-		enemy enemy(0);
-		battleMenu* battle = new battleMenu(player, enemy, 0, menuSystem);
+		enemy* enem = new enemy(0);
+		battleMenu* battle = new battleMenu(player, enem, 0, menuSystem);
 
 		menuSystem.push(battle);
 		menuSystem.top()->displayMenu();
 
 	}
 	else if ((num > 29) && (num < 35)) {
-		boss boss(0);
-		bossMenu* bossM = new bossMenu(player, boss, 0, menuSystem);
+		boss* bose = new boss(0);
+		bossMenu* bossM = new bossMenu(player, bose, 0, menuSystem);
 
 		menuSystem.push(bossM);
 		menuSystem.top()->displayMenu();
@@ -344,14 +345,14 @@ void generateEvent(player player, stack<menu*> menuSystem) {
 				armor* newArmor = new armor();
 
 				cout << "You find " << newArmor->getName() << endl;
-				player.addArmor(newArmor);
+				player->addArmor(newArmor);
 
 			}
 			else {
 				weapon* ptr = new weapon();
 
 				cout << "You find " << ptr->getName() << endl;
-				player.addWeapon(ptr);
+				player->addWeapon(ptr);
 
 			}
 
@@ -373,13 +374,13 @@ void generateEvent(player player, stack<menu*> menuSystem) {
 
 class mMenu : public menu {
 
-	player play;
+	player* play;
 	vector<vector<int>> graph;
 	stack<menu*> menuSystem;
 
 public:
 
-	mMenu(player player, vector<vector<int>> graph, const stack<menu*> menuSystem) {
+	mMenu(player* player, vector<vector<int>> graph, const stack<menu*> menuSystem) {
 		play = player;
 		this->graph = graph;
 		this->menuSystem = menuSystem;
@@ -389,7 +390,7 @@ public:
 
 		int input;
 
-		cout << "You are currently in room " << play.getLocation() << ". What would you like to do?" << endl << endl;
+		cout << "You are currently in room " << play->getLocation() << ". What would you like to do?" << endl << endl;
 
 		cout << "1. Move Rooms" << endl;
 		cout << "2. Quit Game" << endl;
@@ -408,7 +409,7 @@ public:
 		switch (input) {
 		case 1:
 		{
-			play.moveLocation(graph);
+			play->moveLocation(graph);
 			generateEvent(play, menuSystem);
 			mMenu* m = new mMenu(play, graph, menuSystem);
 			menuSystem.push(m);
@@ -420,8 +421,8 @@ public:
 		}
 
 
-		if ((play.getHP() > 0) && input != 3) {
-			play.setMaxHP(play.getMaxHP());
+		if ((play->getHP() > 0) && input != 3) {
+			play->setMaxHP(play->getMaxHP());
 		}
 		else {
 			return;

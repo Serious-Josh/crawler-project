@@ -18,8 +18,6 @@ private:
 
 public:
 
-	enemy() {}
-
 	enemy(int area) {
 
 		this->area = area;
@@ -212,8 +210,6 @@ private:
 	bosses id = bosses::None;
 
 public:
-
-	boss() {}
 
 	boss(int area) : enemy(area) {
 

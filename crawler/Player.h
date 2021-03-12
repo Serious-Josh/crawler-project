@@ -6,6 +6,7 @@
 #include <math.h>
 #include <vector>
 #include "Equipment.h"
+#include "Room.h"
 
 using namespace std;
 
@@ -18,12 +19,11 @@ private:
 	int curExp, needExp, totExp;
 	int guardArmor;
 	bool guard;
-	vector<vector<equipment*>> inventory;
-	weapon* playerWeapon;
-	armor* playerArmor;
-
-	//going to need to do some messing around to keep this to the room number and not a pointer to the vector since the vector doesn't asy which room it is
-	int location;
+	vector<weapon*> weapons;
+	vector<armor*> armors;
+	weapon* playerWeapon; //equiped weapon
+	armor* playerArmor; //equiped armor
+	room* currRoom;
 	
 
 public:
@@ -47,51 +47,61 @@ public:
 		mp = sqrt((pow(mag, 3)/2.1));
 
 
-		//inventory initialization
-		vector<equipment*> weapons;
-		vector<equipment*> armor;
-
-		inventory.push_back(weapons);
-		inventory.push_back(armor);
-
 	}
 
 	//returns the room number the player is in
-	int getLocation() {
-		return location;
+	room* getLocation() {
+		return currRoom;
 	}
 
-	void displayPlayerBattle() {
-		cout << getName() << " --- " << getHP() << " HP" << endl << endl;
+
+	void setLocation(room* location) {
+		this->currRoom = location;
 	}
 
-	void setLocation(int location) {
-		this->location = location;
-	}
+	void moveLocation(vector<room*> roomList) {
 
-	void moveLocation(const vector<vector<int>>& graph) {
+		cout << "Which room do you want to move to:" << endl;
+		string input;
 
-		cout << "Which room do you want to room to: " << endl;
+		if (getLocation()->getEast() != nullptr) {
+			cout << "East" << endl;
+		}
 
-		vector<int> rooms;
-		int count = 1;
+		if (getLocation()->getWest() != nullptr) {
+			cout << "West" << endl;
+		}
 
-		for (int i = 0; i < graph[getLocation()].size(); i++) {
+		if (getLocation()->getNorth() != nullptr) {
+			cout << "North" << endl;
+		}
 
-			if (graph[location][i] == 1) {
-				cout << count << ". " << i << endl;
-				rooms.push_back(i);
-				count++;
-			}
+		if (getLocation()->getSouth() != nullptr) {
+			cout << "South" << endl;
 		}
 
 		cout << endl;
 
-		int input;
 		cin >> input;
 
-		setLocation(rooms[input - 1]);
-		
+			if ((input == "East") || (input == "east")) {
+				setLocation(currRoom->getEast());
+			}
+			else if ((input == "West") || (input == "west")) {
+				setLocation(currRoom->getWest());
+			}
+			else if ((input == "North") || (input == "north")) {
+				setLocation(currRoom->getNorth());
+			}
+			else if ((input == "South") || (input == "south")) {
+				setLocation(currRoom->getNorth());
+			}
+			else {
+				cout << "Invalid input. Please try again." << endl << endl;
+				system("PAUSE");
+				system("CLS");
+			}
+
 	}
 
 	void setName(string name) {
@@ -125,16 +135,14 @@ public:
 		}
 	}
 
-	//getter function block
 	void outputWeapons() {
-		vector<equipment*> temp = inventory[0];
 
 		//showing currently equipped armor to compare against
 		cout << "Currently Equipped: " << playerWeapon->getName() << " - " << playerWeapon->getDamage() << " Attack" << endl << endl << "Inventory: " << endl;
 
-		if (temp.size() != 0) {
-			for (int i = 1; (i - 1) < temp.size(); i++) {
-				cout << i << ". " << temp[(i - 1)]->getName() << " - " << temp[(i - 1)]->outputInfo() << " Attack" << endl;
+		if (weapons.size() != 0) {
+			for (int i = 1; (i - 1) < weapons.size(); i++) {
+				cout << i << ". " << weapons[(i - 1)]->getName() << " - " << weapons[(i - 1)]->outputInfo() << " Attack" << endl;
 			}
 		}
 		else {
@@ -142,16 +150,55 @@ public:
 		}
 	}
 
+	void swapWeapons() {
+
+		unsigned int newWeap;
+
+		if (weapons.empty()) {
+			cout << "You have no weapons to swap to." << endl;
+		}
+		else {
+
+			cout << endl << "What weapon would you like to equip?" << endl;
+			cin >> newWeap;
+
+
+			weapons.push_back(playerWeapon);
+			equipWeapon(weapons[(newWeap - 1)]);
+			weapons.erase(weapons.begin() + (newWeap - 1));
+		}
+	}
+
+	void swapArmor() {
+
+		unsigned int newArmor;
+
+		if (armors.empty()) {
+			cout << "You have no armor to swap to." << endl << endl;
+			system("PAUSE");
+		}
+		else {
+
+			cout << endl << "What armor would you like to equip?" << endl;
+			cin >> newArmor;
+
+
+			armors.push_back(playerArmor);
+			equipArmor(armors[(newArmor - 1)]);
+			armors.erase(armors.begin() + (newArmor - 1));
+		}
+	}
+
+
 	void outputArmor() {
-		vector<equipment*> temp = inventory[1];
-		
+
 		//showing currently equipped armor to compare against
 		cout << "Currently Equipped: " << playerArmor->getName() << " - " << playerArmor->getArmor() << " Armor" << endl << endl << "Inventory: " << endl;
 
 
-		if (temp.size() != 0) {
-			for (int i = 1; (i - 1) < temp.size(); i++) {
-				cout << i << ". " << temp[(i - 1)]->getName() << " - " << temp[(i - 1)]->outputInfo() << " Armor" << endl;
+		if (armors.size() != 0) {
+			for (int i = 1; (i - 1) < armors.size(); i++) {
+				cout << i << ". " << armors[(i - 1)]->getName() << " - " << armors[(i - 1)]->outputInfo() << " Armor" << endl;
 			}
 		}
 		else {
@@ -160,11 +207,11 @@ public:
 	}
 
 	void addWeapon(weapon* weapon) {
-		inventory[0].push_back(weapon);
+		weapons.push_back(weapon);
 	}
 
 	void addArmor(armor* armor) {
-		inventory[1].push_back(armor);
+		armors.push_back(armor);
 	}
 
 	string getName() {
@@ -284,9 +331,9 @@ public:
 
 };
 
-ostream& operator<<(ostream& os, player& player) {
-	os << player.getName() << endl << "Level: " << player.getLevel() << endl << "HP: " << player.getHP() << endl << "MP: " << player.getMP() << endl << endl << "Strength: " << player.getStr() << endl << "Magic: " << player.getMag() << endl;
-	os << "Speed: " << player.getSpd() << endl << "Endurance: " << player.getEnd() << endl;
+ostream& operator<<(ostream& os, player* player) {
+	os << player->getName() << endl << "Level: " << player->getLevel() << endl << "HP: " << player->getHP() << endl << "MP: " << player->getMP() << endl << endl << "Strength: " << player->getStr() << endl << "Magic: " << player->getMag() << endl;
+	os << "Speed: " << player->getSpd() << endl << "Endurance: " << player->getEnd() << endl;
 
 	return os;
 }

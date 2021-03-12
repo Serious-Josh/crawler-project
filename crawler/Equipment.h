@@ -145,18 +145,21 @@ int baseDmgCalculation(weaponType type, int modifier, int shopScaler) {
 	scaler += temp;
 
 
+	//quick system to help mitigate huge damage numbers
+	double temp1 = (shopScaler * 0.4);
+
 
 	//weapon type damage/scalar application
 	switch (type) {
-	case weaponType::Sword: damage = (rand() % 34 + 22) * scaler;
+	case weaponType::Sword: damage = ((rand() % 34 + 22) * scaler) * temp1;
 		break;
-	case weaponType::Dagger: damage = (rand() % 21 + 11) * scaler;
+	case weaponType::Dagger: damage = ((rand() % 21 + 13) * scaler) * temp1;
 		break;
-	case weaponType::Spear: damage = (rand() % 29 + 18) * scaler;
+	case weaponType::Spear: damage = ((rand() % 31 + 18) * scaler) * temp1;
 		break;
-	case weaponType::Axe: damage = (rand() % 43 + 31) * scaler;
+	case weaponType::Axe: damage = ((rand() % 43 + 31) * scaler) * temp1;
 		break;
-	case weaponType::Bow: damage = (rand() % 31 + 19) * scaler;
+	case weaponType::Bow: damage = ((rand() % 27 + 19) * scaler) * temp1;
 		break;
 	}
 
@@ -199,12 +202,17 @@ private:
 	elements elem;
 	weaponType type;
 	int dmgMod;
+
+	//shopScaler was originally just for buying from shops, but I think it'll also end up being used for dungeon levels as well
+	int shopScaler;
 	
 public:
 
 	weapon(string name = "NULL", int weight = 0, int value = 0, int shopScaler = 1.0) : equipment(name, weight, value, shopScaler) {
 
+		this->shopScaler = shopScaler;
 
+		//weapon type generation
 		int tempInt = (rand() % 5 + 1);
 		switch (tempInt) {
 		case 1: type = weaponType::Sword;
@@ -245,6 +253,7 @@ public:
 		//elemental generation
 		double temp2 = rand() % 101;
 
+		//think about lowering percentage
 		if (temp2 <= 12.5) {
 			int temp3 = rand() % 5 + 1;
 
@@ -264,6 +273,7 @@ public:
 		else {
 			this->elem = elements::Normal;
 		}
+
 
 		dmg = baseDmgCalculation(type, dmgMod, shopScaler);
 		elemDmg = elemDmgCalculation(dmg, elem);

@@ -96,6 +96,7 @@ public:
 
 	}
 
+
 	string getName() {
 		return name;
 	}
@@ -145,7 +146,7 @@ public:
 	}
 
 	int enemyAttack(int armor) {
-		int damage = (getAttack() - armor);
+		int damage = (getAttack() - (armor / 2));
 
 		if (damage < 0) {
 			damage = 0;
@@ -193,8 +194,8 @@ public:
 
 };
 
-ostream& operator<<(ostream& os, enemy& enemy) {
-	os << enemy.getName() << endl << "Level: " << enemy.getLevel() << endl << "HP: " << enemy.getHP() << endl << endl;
+ostream& operator<<(ostream& os, enemy* enemy) {
+	os << enemy->getName() << endl << "Level: " << enemy->getLevel() << endl << "HP: " << enemy->getHP() << endl << endl;
 
 	return os;
 }

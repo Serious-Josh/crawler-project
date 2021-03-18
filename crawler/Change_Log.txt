@@ -1,0 +1,32 @@
+v0.2
+
+	addition:
+		-accessories
+		-floor progression
+			*gear progression is not implemented, only floor progression
+		-additional floor one enemies
+		-floor two enemies and boss
+			
+	modified:
+		-boss system
+			*bosses now spawn once all rooms on a floor have been checked
+		-debuff system
+			*the entire debuff system has been adjusted slightly, more the precident has changed
+			*bosses can now give attack debuffs to players
+
+
+v0.1
+
+	additions:
+		-added status view when in main menu (shows full player information including stats)
+		-dungeon generation functionality for direction movement from room to room and tracks if a room has been visited before
+			*this function can be further expanded to include map generation since it connects rooms "spatially"
+		-added the ability to swap weapons and armor
+	
+	modifications:
+		-adjusted enemy damage generation formula and fixed post attack recap screen
+		-modified weapon damage generation by adding extra "reduction scaler" based on shopScaler
+		-modified battle menu to show enemy name and hp, as well as adjusting formatting
+
+	removed:
+		-removed numeric menu for changing rooms

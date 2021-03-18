@@ -30,6 +30,7 @@ string element_to_string(elements type) {
 
 //this is for things like drop chances, modifier chances
 //mainly where rare chances are involved
+//is out of 100
 double randomPercentage() {
 
 	double temp, temp1, temp2, num;
@@ -342,6 +343,81 @@ public:
 	}
 
 };
+
+
+
+enum class accessType { HP, MP, Str, Mag, End, Spd };
+
+string access_to_string(accessType type) {
+	switch (type) {
+	case accessType::HP: return "HP";
+		break;
+	case accessType::MP: return "MP";
+		break;
+	case accessType::Str: return "Str";
+		break;
+	case accessType::Mag: return "Mag";
+		break;
+	case accessType::End: return "End";
+		break;
+	case accessType::Spd: return "Spd";
+		break;
+	}
+}
+
+class accessories : public equipment {
+
+private:
+	accessType type;
+
+public:
+	accessories(string name = "NULL", int weight = 0, int value = 1, double shopScaler = 1.0):equipment(name, weight, value, shopScaler) {
+
+		generateInformation();
+
+	}
+
+	void generateInformation() {
+
+		int temp = randomPercentage();
+
+		if (temp < 21) {
+			type = accessType::HP;
+			setName("Band of Health");
+		}
+		else if (temp < 41) {
+			type = accessType::MP;
+			setName("Band of Aether");
+		}
+		else if (temp < 56) {
+			type = accessType::Str;
+			setName("Ring of Power");
+		}
+		else if (temp < 71) {
+			type = accessType::Mag;
+			setName("Ring of Magic");
+		}
+		else if (temp < 86) {
+			type = accessType::End;
+			setName("Ring of Endurance");
+		}
+		else {
+			type = accessType::Spd;
+			setName("Ring of Quickness");
+		}
+
+	}
+
+	accessType getType() {
+		return type;
+	}
+
+	string outputInfo() {
+		return access_to_string(type);
+	}
+
+};
+
 
 
 class armor : public equipment {

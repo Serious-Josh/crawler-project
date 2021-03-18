@@ -21,15 +21,25 @@ private:
 	bool guard;
 	vector<weapon*> weapons;
 	vector<armor*> armors;
+	vector<accessories*> accessory;
 	weapon* playerWeapon; //equiped weapon
 	armor* playerArmor; //equiped armor
+	accessories* playerAccess;
 	room* currRoom;
+
+	//for attack debuffs
+	int normDamage, tempDamage;
+
+	//mainly for later if I add a save feature
+	int currFloor;
+	bool bossKill;
 	
 
 public:
 
 	player(string name = "NULL") {
 
+		currFloor = 0;
 		guard = false;
 
 		srand(time(NULL));
@@ -47,6 +57,30 @@ public:
 		mp = sqrt((pow(mag, 3)/2.1));
 
 
+	}
+
+	int getTempDamage() {
+		return tempDamage;
+	}
+
+	void setTempDamage(int damage) {
+		tempDamage = damage;
+	}
+
+	int getNormDamage() {
+		return normDamage;
+	}
+
+	void setNormDamage(int damage) {
+		normDamage = damage;
+	}
+
+	void nextFloor() {
+		currFloor++;
+	}
+
+	bool getBossKill() {
+		return bossKill;
 	}
 
 	//returns the room number the player is in
@@ -104,6 +138,36 @@ public:
 
 	}
 
+	void equipAccessory(accessories* newAccess) {
+		this->playerAccess = newAccess;
+
+		switch (newAccess->getType()) {
+
+		case accessType::HP:
+			tempHP += (maxHP * 0.1);
+			break;
+		case accessType::MP:
+			mp += (mp * 0.1);
+			break;
+		case accessType::Str:
+			str += 5;
+			break;
+		case accessType::Mag:
+			mag += 5;
+			break;
+		case accessType::End:
+			end += 5;
+			break;
+		case accessType::Spd:
+			spd += 5;
+			break;
+		}
+	}
+
+	void addAccessory(accessories* newAccess) {
+		equipAccessory(newAccess);
+	}
+
 	void setName(string name) {
 		this->name = name;
 	}
@@ -141,7 +205,7 @@ public:
 		cout << "Currently Equipped: " << playerWeapon->getName() << " - " << playerWeapon->getDamage() << " Attack" << endl << endl << "Inventory: " << endl;
 
 		if (weapons.size() != 0) {
-			for (int i = 1; (i - 1) < weapons.size(); i++) {
+			for (unsigned int i = 1; (i - 1) < weapons.size(); i++) {
 				cout << i << ". " << weapons[(i - 1)]->getName() << " - " << weapons[(i - 1)]->outputInfo() << " Attack" << endl;
 			}
 		}
@@ -150,23 +214,81 @@ public:
 		}
 	}
 
+	void outputAccess() {
+
+		//showing currently equipped armor to compare against
+		cout << "Currently Equipped: " << playerAccess->getName() << " - +" << playerAccess->outputInfo() << endl << endl << "Inventory: " << endl;
+
+		if (accessory.size() != 0) {
+			for (int i = 1; (i - 1) < accessory.size(); i++) {
+				cout << i << ". " << accessory[(i - 1)]->getName() << " - +" << accessory[(i - 1)]->outputInfo() << endl;
+			}
+		}
+		else {
+			cout << "You have nothing else in your inventory." << endl;
+		}
+	}
+
+	void swapAccessory() {
+
+		unsigned int newAccess;
+
+		if (accessory.empty()) {
+			cout << "You have no accessories to swap to." << endl;
+		}
+		else {
+
+			cout << endl << "What accessory would you like to equip?" << endl;
+			cin >> newAccess;
+
+
+			switch (playerAccess->getType()) {
+
+			case accessType::HP:
+				tempHP -= (maxHP * 0.1);
+				break;
+			case accessType::MP:
+				mp -= (mp * 0.1);
+				break;
+			case accessType::Str:
+				str -= 5;
+				break;
+			case accessType::Mag:
+				mag -= 5;
+				break;
+			case accessType::End:
+				end -= 5;
+				break;
+			case accessType::Spd:
+				spd -= 5;
+				break;
+			}
+
+			accessory.push_back(playerAccess);
+			equipAccessory(accessory[(newAccess - 1)]);
+			accessory.erase(accessory.begin() + (newAccess - 1));
+		}
+	}
+
 	void swapWeapons() {
 
-		unsigned int newWeap;
+		unsigned int newWeapon;
 
 		if (weapons.empty()) {
-			cout << "You have no weapons to swap to." << endl;
+			cout << "You have no weapon to swap to." << endl << endl;
+			system("PAUSE");
 		}
 		else {
 
 			cout << endl << "What weapon would you like to equip?" << endl;
-			cin >> newWeap;
+			cin >> newWeapon;
 
 
 			weapons.push_back(playerWeapon);
-			equipWeapon(weapons[(newWeap - 1)]);
-			weapons.erase(weapons.begin() + (newWeap - 1));
+			equipWeapon(weapons[(newWeapon - 1)]);
+			weapons.erase(weapons.begin() + (newWeapon - 1));
 		}
+
 	}
 
 	void swapArmor() {
@@ -260,8 +382,14 @@ public:
 
 	void playerDamage(int damage) {
 
-		if (damage < 0) {
-			setGuardArmor(getGuardArmor() * 0.8);
+
+		// -1 < damage < 0 == defense debuff
+		// -2 < damage < -1 == attack debuff
+		if ((damage < 0) && (damage >= -1)) {
+			setGuardArmor(getGuardArmor() * (1 + damage));
+		}
+		else if ((damage <= -1) && (damage >= -2)) {
+			setTempDamage(getNormDamage() * (2 + damage));
 		}
 		else {
 			if (getHP() - damage < 0) {
@@ -269,7 +397,7 @@ public:
 			}
 			else {
 				setTempHP(getHP());
-				setHP(getHP() - damage);
+				setHP(getHP() - static_cast<int>(damage));
 			}
 		}
 	}
@@ -280,7 +408,7 @@ public:
 
 	int playerAttack(int armor) {
 
-		int damage = (playerWeapon->getDamage() + playerWeapon->getElementalDamage()) - armor;
+		int damage = (getTempDamage() + playerWeapon->getElementalDamage()) - armor;
 
 		if (damage < 0) {
 			damage = 0;
@@ -288,6 +416,8 @@ public:
 		else {
 			damage = damage;
 		}
+
+		setTempDamage(getNormDamage());
 
 		return damage;
 	}
@@ -323,6 +453,8 @@ public:
 
 	void equipWeapon(weapon* weapon) {
 		playerWeapon = weapon;
+		setNormDamage(playerWeapon->getDamage());
+		setTempDamage(getNormDamage());
 	}
 
 	void equipArmor(armor* armor) {

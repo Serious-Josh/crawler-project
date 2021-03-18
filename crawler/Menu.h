@@ -7,6 +7,7 @@
 #include <stack>
 
 
+
 class menu {
 
 public:
@@ -34,7 +35,8 @@ public:
 
 		cout << "1. Weapons" << endl;
 		cout << "2. Armor" << endl;
-		cout << "3. Exit" << endl << endl;
+		cout << "3. Accessories" << endl;
+		cout << "4. Exit" << endl << endl;
 
 		cin >> input;
 
@@ -81,7 +83,29 @@ public:
 			system("CLS");
 			menuSystem->top()->displayMenu();
 			break;
+
+
 		case 3:
+			system("CLS");
+			play.outputAccess();
+
+			cout << endl << "What would you like to do?" << endl << endl;
+			cout << "Swap" << endl;
+			cout << "Exit" << endl << endl;
+
+			cin >> input1;
+
+			if ((input1 == "Swap") || (input1 == "swap")) {
+				system("CLS");
+				play.outputAccess();
+				play.swapAccessory();
+			}
+
+			system("CLS");
+			menuSystem->top()->displayMenu();
+			break;
+
+		case 4:
 			menuSystem->pop();
 			menuSystem->top()->displayMenu();
 		}
@@ -387,18 +411,7 @@ void generateEvent(player* player, stack<menu*>* menuSystem) {
 			menuSystem->top()->displayMenu();
 
 		}
-		else if ((num > 29) && (num < 35)) {
-
-			player->getLocation()->setChecked();
-
-			boss* bose = new boss(0);
-			bossMenu* bossM = new bossMenu(player, bose, menuSystem);
-			menuSystem->push(bossM);
-			system("CLS");
-			menuSystem->top()->displayMenu();
-
-		}
-		else if ((num > 34) && (num < 40)) {
+		else if ((num > 29) && (num < 45)) {
 
 			player->getLocation()->setChecked();
 
@@ -460,6 +473,29 @@ public:
 	}
 
 	void displayMenu() {
+
+
+		//if every room is checked, then spawn boss
+		//this is checked each time the main menu is called (which shouldn't be so often it causes problems)
+		for (int i = 0; i < roomList.size(); i++) {
+
+			if (roomList[i]->getCheck() == false) {
+				break;
+			}
+			else if (i == (roomList.size() - 1) ){
+
+				boss* newBoss = new boss(0);
+
+				system("PAUSE");
+				system("CLS");
+
+				bossMenu* bossM = new bossMenu(play, newBoss, menuSystem);
+				menuSystem->push(bossM);
+
+				menuSystem->top()->displayMenu();
+			}
+
+		}
 
 		int input;
 

@@ -25,4 +25,7 @@
       <UniqueIdentifier>{abddef79-90ac-4f36-b087-8819bfae3470}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Change_Log.txt" />
+  </ItemGroup>
 </Project>

@@ -7,3 +7,5 @@ I have only one rule set for this project:
 I want every line of code in this project to be mine. My goal is to learn and explore as much as I can.
 
 I have a [Trello](https://trello.com/b/ZKiOcDwN/crawler-project-roadmap) set up mainly as a personal to-do list where you can follow current progress and priorities if you want.
+
+The full changelog from v0.1 is [here](https://github.com/Serious-Josh/crawler-project/blob/master/crawler/Change_Log.txt)

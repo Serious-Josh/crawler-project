@@ -17,7 +17,6 @@ private:
 	int hp, tempHP, mp, maxHP;
 	int str, mag, spd, end; //stats
 	int curExp, needExp, totExp;
-	int guardArmor;
 	bool guard;
 	vector<weapon*> weapons;
 	vector<armor*> armors;
@@ -33,6 +32,7 @@ private:
 	//mainly for later if I add a save feature
 	int currFloor;
 	bool bossKill;
+	int x, y;
 	
 
 public:
@@ -56,7 +56,35 @@ public:
 		hp = sqrt((pow(end, 5)/358)) + 200;
 		mp = sqrt((pow(mag, 3)/2.1));
 
+		currFloor = 0;
 
+		x = 1;
+		y = 1;
+
+	}
+
+	int getFloor() {
+		return currFloor;
+	}
+
+	void advanceFloor() {
+		currFloor++;
+	}
+
+	int getPX() {
+		return x;
+	}
+
+	int getPY() {
+		return y;
+	}
+
+	void setPX(int i) {
+		x = i;
+	}
+
+	void setPY(int i) {
+		y = i;
 	}
 
 	int getTempDamage() {
@@ -380,18 +408,16 @@ public:
 		tempHP = hp;
 	}
 
+	int getCurEXP() {
+		return curExp;
+	}
+
+	int getNeedEXP() {
+		return needExp;
+	}
+
 	void playerDamage(int damage) {
 
-
-		// -1 < damage < 0 == defense debuff
-		// -2 < damage < -1 == attack debuff
-		if ((damage < 0) && (damage >= -1)) {
-			setGuardArmor(getGuardArmor() * (1 + damage));
-		}
-		else if ((damage <= -1) && (damage >= -2)) {
-			setTempDamage(getNormDamage() * (2 + damage));
-		}
-		else {
 			if (getHP() - damage < 0) {
 				setHP(0);
 			}
@@ -399,11 +425,19 @@ public:
 				setTempHP(getHP());
 				setHP(getHP() - static_cast<int>(damage));
 			}
-		}
+
 	}
 
 	int getEquipArmor() {
 		return playerArmor->getArmor();
+	}
+
+	int getTempArmor() {
+		return playerArmor->getTempArmor();
+	}
+
+	armor* getArmor() {
+		return playerArmor;
 	}
 
 	int playerAttack(int armor) {
@@ -422,13 +456,7 @@ public:
 		return damage;
 	}
 
-	int getGuardArmor() {
-		return guardArmor;
-	}
 
-	void setGuardArmor(int armor) {
-		guardArmor = armor;
-	}
 
 	bool getGuard() {
 		return guard;
@@ -438,18 +466,6 @@ public:
 		guard = flag;
 	}
 
-
-	void guardFun(int i) {
-
-		if (i == 1) {
-			setGuardArmor(playerArmor->getArmor());
-			setGuard(false);
-		}
-		else {
-			setGuardArmor(guardArmor * 1.5);
-			setGuard(true);
-		}
-	}
 
 	void equipWeapon(weapon* weapon) {
 		playerWeapon = weapon;

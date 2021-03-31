@@ -1,3 +1,21 @@
+v0.3
+	additions:
+		-GUI
+			*traditional roguelike ascii gui has now been added. the player can navigate throughout the dungeon and see enemies and objects in the world
+			*it is very basic at this point
+			*this includes codes for different things in the game world
+		-input system for open world exploration. only movement is possible at the moment but more will be added later on
+
+	modified:
+		-debuff system that currently allows for attack and defense decreases. this can later be expanded to included other things
+		-fixed armor, as it didn't actually do anything before because of an oversight
+		-player can now gain exp
+
+	overhaul:
+		-world generation. rooms now have x and y sizes
+
+
+
 v0.2
 
 	addition:

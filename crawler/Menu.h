@@ -5,6 +5,30 @@
 #include <iostream>
 #include <iomanip>
 #include <stack>
+#include <Windows.h>
+#include <conio.h>
+#include "Codes.cpp"
+#include "Room.h"
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+
+const int MAX_X = 25;
+const int MAX_Y = 25;
+
+char render_array[MAX_Y][MAX_X]{};
+char prev_render_array[MAX_Y][MAX_X]{};
+
+
+
+class menu;
+
+void setCursorPosition(int x, int y);
+void updateScreen(char prev_buffer[][MAX_X], char curr_buffer[][MAX_X]);
+void ShowConsoleCursor(bool showFlag);
+int debuffCheck(boss* boss, player* play, double damage, int* debuffCount);
+void renderScreen(player* play, stack<menu*>* menuSystem);
+
+
 
 
 
@@ -106,6 +130,7 @@ public:
 			break;
 
 		case 4:
+			system("CLS");
 			menuSystem->pop();
 			menuSystem->top()->displayMenu();
 		}
@@ -147,8 +172,11 @@ public:
 			system("CLS");
 			cout << "You defeated " << enem->getName() << "!" << endl;
 			cout << "You gained " << enem->getEXP() << "exp!" << endl;
+			play->gainEXP(enem->getEXP());
 			system("PAUSE");
 			system("CLS");
+			play->getLocation()->setEnemy(nullptr);
+			play->getLocation()->setChecked();
 			menuSystem->pop();
 			menuSystem->top()->displayMenu();
 			return;
@@ -187,8 +215,6 @@ public:
 			play->setTempHP(0);
 			enem->setTempHP(0);
 
-			play->guardFun(1);
-
 			int input;
 
 			ios_base::fmtflags flags = cout.flags();
@@ -223,15 +249,15 @@ public:
 				{
 					enem->enemyDamage(play->playerAttack(enem->getArmor()));
 					if (enem->getHP() > 0) {
-						play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
+						play->playerDamage(enem->enemyAttack(play->getEquipArmor()));
 					}
 					count = 1;
 					menuSystem->top()->displayMenu();
 				}
 				case 2:
 				{
-					play->guardFun(2);
-					play->playerDamage(enem->enemyAttack(play->getGuardArmor()));
+					play->setGuard(true);
+					play->playerDamage(enem->enemyAttack(play->getEquipArmor()));
 					count = 1;
 					menuSystem->top()->displayMenu();
 				}
@@ -259,14 +285,16 @@ public:
 
 };
 
+
 class bossMenu : public menu {
 
 private:
 
 	player *play;
 	boss *bose;
-	int count;
+	int count, debuffCount;
 	stack<menu*>* menuSystem;
+	int* dCount = &debuffCount;
 
 public:
 
@@ -277,6 +305,10 @@ public:
 		count = -1;
 		this->menuSystem = menuSystem;
 
+	}
+
+	void incDebuffCount() {
+		debuffCount++;
 	}
 
 	void displayMenu() {
@@ -308,20 +340,27 @@ public:
 
 				cout << endl;
 
-				if (temp1 > 0) {
-					cout << "You took " << temp1 << " damage!" << endl << endl;
-				}
-
 				if (temp > 0) {
 					cout << "You dealt " << temp << " damage!" << endl;
 				}
+				else {
+					cout << "You dealt 0 damage!" << endl;
+				}
+
+				if (temp1 > 0) {
+					cout << "You took " << temp1 << " damage!" << endl << endl;
+				}
+				else {
+					cout << "You took 0 damage!" << endl;
+				}
+
+				system("PAUSE");
+				system("CLS");
 
 			}
 
 			play->setTempHP(0);
 			bose->setTempHP(0);
-
-			play->guardFun(1);
 
 			int input;
 
@@ -334,6 +373,7 @@ public:
 			cout << "4. Inventory" << endl;
 
 			cin >> input;
+			debuffCount++;
 
 			system("CLS");
 
@@ -345,21 +385,43 @@ public:
 			}
 			else {
 				switch (input) {
-				case 1: {bose->enemyDamage(play->playerAttack(bose->getArmor()));
+				case 1: {
 					if (bose->getHP() > 0) {
-						play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
+						play->playerDamage(debuffCheck(bose, play, bose->bossAttack(bose->getID(), play->getTempArmor()), dCount));
+
+						//this is checking to see if a debuff has been applied a turn ago
+						//if so, revert it
+						if (debuffCount == 1) {
+							play->getArmor()->setTempArmor(play->getEquipArmor());
+							play->setTempDamage(play->getNormDamage());
+						}
+
 					}
+
+					if (play->getGuard() == true) {
+						play->setGuard(false);
+					}
+
+					bose->enemyDamage(play->playerAttack(bose->getArmor()));
+
+					if (debuffCount == 1) {
+						play->getArmor()->setTempArmor(play->getEquipArmor());
+						play->setTempDamage(play->getNormDamage());
+					}
+
 					count = 1;
 					menuSystem->top()->displayMenu();
 				}
 
-				case 2: {play->guardFun(2);
-					play->playerDamage(bose->bossAttack(bose->getID(), play->getGuardArmor()));
+				case 2: {
+					play->setGuard(true);
+					play->playerDamage(debuffCheck(bose, play, bose->bossAttack(bose->getID(), play->getTempArmor()), dCount));
 					count = 1;
 					menuSystem->top()->displayMenu();
 				}
 
-				case 3: {system("CLS");
+				case 3: {
+					system("CLS");
 					cout << bose << endl << endl;
 					system("PAUSE");
 					system("CLS");
@@ -384,77 +446,9 @@ public:
 };
 
 
-void generateEvent(player* player, stack<menu*>* menuSystem) {
 
-	int num = rand() % 41;
 
-	if (player->getLocation()->getCheck() == true) {
 
-		cout << "You have been to this room before." << endl << endl;
-	}
-	else {
-
-		//chance for normal enemy
-		if (num < 30) {
-
-			player->getLocation()->setChecked();
-
-			enemy* enem = new enemy(0);
-			battleMenu* battle = new battleMenu(player, enem, menuSystem);
-			menuSystem->push(battle);
-
-			system("CLS");
-			cout << "You've encountered a " << enem->getName() << "!" << endl;
-			system("PAUSE");
-			system("CLS");
-
-			menuSystem->top()->displayMenu();
-
-		}
-		else if ((num > 29) && (num < 45)) {
-
-			player->getLocation()->setChecked();
-
-			cout << "There is a chest in the room. Open? (Y/N)" << endl;
-			string input;
-
-			cin >> input;
-
-			if ((input == "Y") || (input == "y")) {
-				int num = rand() % 2;
-
-				if (num == 0) {
-					armor* newArmor = new armor();
-
-					cout << "You find " << newArmor->getName() << endl;
-					player->addArmor(newArmor);
-
-				}
-				else {
-					weapon* ptr = new weapon();
-
-					cout << "You find " << ptr->getName() << endl;
-					player->addWeapon(ptr);
-
-				}
-
-				system("PAUSE");
-				system("CLS");
-
-			}
-			else {
-
-				system("CLS");
-
-			}
-		}
-		else {
-			system("CLS");
-			cout << "There's nothing in the room." << endl;
-		}
-	}
-
-}
 
 class mMenu : public menu {
 
@@ -486,67 +480,654 @@ public:
 
 				boss* newBoss = new boss(0);
 
+				roomList[rand() % roomList.size() + 1]->setEnemy(newBoss);
+
+				cout << "Boss has spawned. Defeat it if you dare..." << endl;
 				system("PAUSE");
 				system("CLS");
-
-				bossMenu* bossM = new bossMenu(play, newBoss, menuSystem);
-				menuSystem->push(bossM);
-
-				menuSystem->top()->displayMenu();
+				
 			}
 
 		}
 
-		int input;
-
-		cout << "What would you like to do?" << endl << endl;
-
-		cout << "1. Move Rooms" << endl;
-		cout << "2. Status" << endl;
-		cout << "3. Quit Game" << endl;
-
-		cin >> input;
-
-		system("CLS");
-
-		if (!cin || input < 1 || input > 3) {
-			cin.ignore();
-			cin.clear(1000, 'n');
-			cout << "That's not a valid option. Please try again." << endl;
-			menuSystem->top()->displayMenu();
-		}
-
-		switch (input) {
-
-			//move rooms
-		case 1:
-		{
-			play->moveLocation(roomList);
-			generateEvent(play, menuSystem);
-			menuSystem->top()->displayMenu();
-		}
-
-		//quit game
-		case 2: 
-		{
-			cout << play << endl;
-			system("PAUSE");
-			system("CLS");
-			menuSystem->top()->displayMenu();
-		}
-		case 3: {
-			exit(0);
-		}
-		}
-
-
-		if ((play->getHP() > 0) && input != 3) {
-			play->setMaxHP(play->getMaxHP());
-		}
-		else {
-			return;
-		}
+		renderScreen(play, menuSystem);
 
 	}
 
 };
+
+
+int debuffCheck(boss* boss, player* play, double damage, int* debuffCount) {
+
+	if ((damage < 0) && ((abs(damage) - abs(floor(damage))) > 0.45)) {
+		
+		//only player debuff
+		// -1 < damage < 0 == defense debuff
+		// -2 < damage < -1 == attack debuff
+		if ((damage < 0) && (damage >= 0.45)) {
+			play->getArmor()->setTempArmor(play->getEquipArmor() * (1 + damage));
+			(*debuffCount)++;
+		}
+		else if ((damage <= -1) && (damage >= -2)) {
+			play->setTempDamage(play->getNormDamage() * (2 + damage));
+			(*debuffCount) = 0;
+		}
+		
+		return 0;
+
+	}
+	else if (damage < 0) {
+
+		//player debuff and attack
+		if ((damage < 0) && (damage >= -1)) {
+			play->getArmor()->setTempArmor(play->getEquipArmor() * (1 + damage));
+			(*debuffCount) = 0;
+		}
+		else if ((damage <= -1) && (damage >= -2)) {
+			play->setTempDamage(play->getNormDamage() * (2 + damage));
+			(*debuffCount) = 0;
+		}
+
+		return damage;
+
+	}
+	else {
+		return damage;
+	}
+
+}
+
+void renderScreen(player* play, stack<menu*>* menuSystem) {
+
+	HWND console = GetConsoleWindow();
+	RECT r;
+	GetWindowRect(console, &r);
+
+	MoveWindow(console, r.left, r.top, 800, 800, TRUE);
+
+	ShowConsoleCursor(false);
+
+	int count = 0;
+
+	while (count < 25) {
+		for (int i = 0; i < sizeof(render_array[count]); i++) {
+
+			//if it's on the top left
+			if ((count == 0) && (i == 0)) {
+				render_array[count][i] = TL;
+			}
+
+			//if it's on the top right
+			else if ((count == 0) && (i == (play->getLocation()->getX() + 1))) {
+				render_array[count][i] = TR;
+			}
+
+			//if it's on the top row
+			else if (count == 0) {
+
+				if (i > (play->getLocation()->getX() + 1)) {
+					render_array[count][i] = ' ';
+				}
+				else if (i == play->getLocation()->getNDoor()) {
+					render_array[count][i] = ' ';
+				}
+				else {
+
+					render_array[count][i] = TB;
+				}
+			}
+
+			//if it's on the bottom left corner
+			else if ((count == play->getLocation()->getY() + 1) && (i == 0)) {
+				render_array[count][i] = BL;
+			}
+
+			//if it's on the bottom right corner
+			else if ((count == play->getLocation()->getY() + 1) && (i == (play->getLocation()->getX() + 1))) {
+				render_array[count][i] = BR;
+			}
+
+			//if it's on bottom wall
+			else if (count == (play->getLocation()->getY() + 1)) {
+
+				if (i > (play->getLocation()->getX() + 1)) {
+					render_array[count][i] = ' ';
+				}
+				else if (i == play->getLocation()->getSDoor()) {
+					render_array[count][i] = ' ';
+				}
+				else {
+
+					render_array[count][i] = TB;
+				}
+			}
+
+			//if it's on the left wall or right wall
+			else if ((i == 0) || (i == (play->getLocation()->getX() + 1))) {
+
+				if (count > (play->getLocation()->getY() + 1)) {
+					render_array[count][i] = ' ';
+				}
+				else if ((count == play->getLocation()->getEDoor()) && (i == play->getLocation()->getX() + 1)) {
+					render_array[count][i] = ' ';
+				}
+				else if ((count == play->getLocation()->getWDoor()) && (i == 0)) {
+					render_array[count][i] = ' ';
+				}
+				else {
+
+					render_array[count][i] = LR;
+				}
+			}
+			else {
+
+				if (count > (play->getLocation()->getY() + 1)) {
+					render_array[count][i] = ' ';
+				}
+				else if (i > (play->getLocation()->getX() + 1)) {
+					render_array[count][i] = ' ';
+				}
+				else {
+					render_array[count][i] = space;
+				}
+			}
+
+		}
+
+		count++;
+
+	}
+
+	
+
+
+	render_array[play->getPY()][play->getPX()] = playIcon;
+
+	if (play->getLocation()->getChest() == true) {
+		render_array[rand() % play->getLocation()->getY() + 1][rand() % play->getLocation()->getX() + 1] = chest;
+	}
+
+	if (play->getLocation()->getEnemy() != nullptr) {
+
+		if (play->getLocation()->getEnemy()->getBoss() == true) {
+			render_array[play->getLocation()->getEnemy()->getEY()][play->getLocation()->getEnemy()->getEX()] = bossIcon;
+		}
+		else {
+			render_array[play->getLocation()->getEnemy()->getEY()][play->getLocation()->getEnemy()->getEX()] = enemyIcon;
+		}
+	}
+
+	updateScreen(prev_render_array, render_array);
+
+
+
+	int c, ex = 0;
+	while (1) {
+
+		cout << "HP: " << play->getHP() << "     " << "MP: " << play->getMP() << "     " << "EXP: " << play->getCurEXP() << " (" << play->getNeedEXP() << ")" << endl << endl;
+
+		c = _getch();
+
+		if (c && c != 224) {
+			cout << "Not arrow" << endl;
+		}
+		else {
+
+			switch ((ex = _getch())) {
+			case KEY_UP:
+
+				//checking if the player comes into a new room
+				if ((play->getPX() == play->getLocation()->getNDoor()) && (play->getPY() == 1)) {
+					play->setLocation(play->getLocation()->getNorth());
+
+					play->setPX(play->getLocation()->getSDoor());
+					play->setPY(play->getLocation()->getY());
+
+					//check to make sure player in inside room
+					if (play->getPX() > play->getLocation()->getX()) {
+						play->setPX(play->getLocation()->getSDoor());
+					}
+
+					if (play->getPY() > play->getLocation()->getY()) {
+						play->setPY(play->getLocation()->getY());
+					}
+
+
+					if (play->getLocation()->getCheck() == false) {
+						
+						int num = rand() % 100 + 1;
+
+						if (play->getLocation()->getCheck() == false) {
+
+							if (num < 1) {
+
+								enemy* newEnem = new enemy(play->getFloor());
+
+								newEnem->setEX(rand() % play->getLocation()->getX() + 1);
+								newEnem->setEY(rand() % play->getLocation()->getY() + 1);
+
+								play->getLocation()->setEnemy(newEnem);
+
+								renderScreen(play, menuSystem);
+
+							}
+							else if ((num < 100) && (num > 0)) {
+
+								play->getLocation()->setChest();
+							}
+
+
+						}
+
+
+
+					}
+
+					//I think this renderScreen is obligatory since it's already called in the generateEvent function, but I'm going to leave it just in case
+					renderScreen(play, menuSystem);
+				}
+				// isn't a new room
+				else {
+
+					if (play->getPY() > 1) {
+
+						if (render_array[play->getPY() - 1][play->getPX()] == enemyIcon) {
+
+							battleMenu* bMenu = new battleMenu(play, play->getLocation()->getEnemy(), menuSystem);
+							menuSystem->push(bMenu);
+
+							menuSystem->top()->displayMenu();
+
+						}
+						else if (render_array[play->getPY() - 1][play->getPX()] == chest) {
+
+							int num = rand() % 2;
+
+							if (num == 0) {
+								armor* newArmor = new armor();
+
+								cout << "You find " << newArmor->getName() << endl;
+								system("PAUSE");
+								system("CLS");
+								play->addArmor(newArmor);
+
+								play->getLocation()->setChecked();
+								play->getLocation()->setChest();
+
+							}
+							else {
+								weapon* ptr = new weapon();
+
+								cout << "You find " << ptr->getName() << endl;
+								system("PAUSE");
+								system("CLS");
+								play->addWeapon(ptr);
+
+								play->getLocation()->setChecked();
+								play->getLocation()->setChest();
+
+							}
+
+						}
+
+						render_array[play->getPY() - 1][play->getPX()] = playIcon;
+						render_array[play->getPY()][play->getPX()] = space;
+
+						play->setPY(play->getPY() - 1);
+						updateScreen(prev_render_array, render_array);
+					}
+				}
+
+				break;
+
+			case KEY_DOWN:
+
+				if ((play->getPX() == play->getLocation()->getSDoor()) && (play->getPY() == play->getLocation()->getY())) {
+					play->setLocation(play->getLocation()->getSouth());
+
+					play->setPX(play->getLocation()->getNDoor());
+					play->setPY(1);
+
+					//check to make sure player in inside room
+					if (play->getPX() > play->getLocation()->getX()) {
+						play->setPX(play->getLocation()->getNDoor());
+					}
+
+					if (play->getPY() > play->getLocation()->getY()) {
+						play->setPY(1);
+					}
+
+					if (play->getLocation()->getCheck() == false) {
+
+						int num = rand() % 100 + 1;
+
+						if (play->getLocation()->getCheck() == false) {
+
+							if (num < 50) {
+
+								enemy* newEnem = new enemy(play->getFloor());
+
+								newEnem->setEX(rand() % play->getLocation()->getX() + 1);
+								newEnem->setEY(rand() % play->getLocation()->getY() + 1);
+
+								play->getLocation()->setEnemy(newEnem);
+
+								renderScreen(play, menuSystem);
+
+							}
+
+
+						}
+						else if ((num < 75) && (num >= 50)) {
+
+							play->getLocation()->setChest();
+						}
+
+
+
+					}
+
+					renderScreen(play, menuSystem);
+				}
+				else {
+
+					if (render_array[play->getPY() + 1][play->getPX()] == enemyIcon) {
+
+						battleMenu* bMenu = new battleMenu(play, play->getLocation()->getEnemy(), menuSystem);
+						menuSystem->push(bMenu);
+
+						menuSystem->top()->displayMenu();
+
+					}
+					else if (render_array[play->getPY() + 1][play->getPX()] == chest) {
+
+						int num = rand() % 2;
+
+						if (num == 0) {
+							armor* newArmor = new armor();
+
+							cout << "You find " << newArmor->getName() << endl;
+							system("PAUSE");
+							system("CLS");
+							play->addArmor(newArmor);
+
+							play->getLocation()->setChecked();
+							play->getLocation()->setChest();
+
+						}
+						else {
+							weapon* ptr = new weapon();
+
+							cout << "You find " << ptr->getName() << endl;
+							system("PAUSE");
+							system("CLS");
+							play->addWeapon(ptr);
+
+							play->getLocation()->setChecked();
+							play->getLocation()->setChest();
+
+						}
+
+					}
+
+					if (play->getPY() < play->getLocation()->getY()) {
+						render_array[play->getPY() + 1][play->getPX()] = playIcon;
+						render_array[play->getPY()][play->getPX()] = space;
+
+						play->setPY(play->getPY() + 1);
+						updateScreen(prev_render_array, render_array);
+					}
+				}
+
+				break;
+
+			case KEY_LEFT:
+
+				if ((play->getPY() == play->getLocation()->getWDoor()) && (play->getPX() == 1)) {
+
+					play->setLocation(play->getLocation()->getWest());
+
+					play->setPX(play->getLocation()->getX());
+					play->setPY(play->getLocation()->getEDoor());
+
+					if (play->getPX() > play->getLocation()->getX()) {
+						play->setPX(play->getLocation()->getX());
+					}
+
+					if (play->getPY() > play->getLocation()->getY()) {
+						play->setPY(play->getLocation()->getEDoor());
+					}
+
+					if (play->getLocation()->getCheck() == false) {
+
+						int num = rand() % 100 + 1;
+
+						if (play->getLocation()->getCheck() == false) {
+
+							if (num < 50) {
+
+								enemy* newEnem = new enemy(play->getFloor());
+
+								newEnem->setEX(rand() % play->getLocation()->getX() + 1);
+								newEnem->setEY(rand() % play->getLocation()->getY() + 1);
+
+								play->getLocation()->setEnemy(newEnem);
+
+								renderScreen(play, menuSystem);
+
+							}
+
+
+						}
+						else if ((num < 75) && (num >= 50)) {
+
+							play->getLocation()->setChest();
+						}
+
+
+
+					}
+
+					renderScreen(play, menuSystem);
+
+				}
+				else {
+
+					if (render_array[play->getPY()][play->getPX() - 1] == enemyIcon) {
+
+						battleMenu* bMenu = new battleMenu(play, play->getLocation()->getEnemy(), menuSystem);
+						menuSystem->push(bMenu);
+
+						menuSystem->top()->displayMenu();
+
+					}
+					else if (render_array[play->getPY()][play->getPX() - 1] == chest) {
+
+						int num = rand() % 2;
+
+						if (num == 0) {
+							armor* newArmor = new armor();
+
+							cout << "You find " << newArmor->getName() << endl;
+							system("PAUSE");
+							system("CLS");
+							play->addArmor(newArmor);
+
+							play->getLocation()->setChecked();
+							play->getLocation()->setChest();
+
+						}
+						else {
+							weapon* ptr = new weapon();
+
+							cout << "You find " << ptr->getName() << endl;
+							system("PAUSE");
+							system("CLS");
+							play->addWeapon(ptr);
+
+							play->getLocation()->setChecked();
+							play->getLocation()->setChest();
+
+						}
+
+					}
+
+
+					if (play->getPX() > 1) {
+						render_array[play->getPY()][play->getPX() - 1] = playIcon;
+						render_array[play->getPY()][play->getPX()] = space;
+
+						play->setPX(play->getPX() - 1);
+						updateScreen(prev_render_array, render_array);
+					}
+				}
+
+				break;
+
+			case KEY_RIGHT:
+
+				if ((play->getPY() == play->getLocation()->getEDoor()) && (play->getPX() == play->getLocation()->getX())) {
+					play->setLocation(play->getLocation()->getEast());
+
+					play->setPX(1);
+					play->setPY(play->getLocation()->getWDoor());
+
+					if (play->getPX() > play->getLocation()->getX()) {
+						play->setPX(1);
+					}
+
+					if (play->getPY() > play->getLocation()->getY()) {
+						play->setPY(play->getLocation()->getWDoor());
+					}
+
+					if (play->getLocation()->getCheck() == false) {
+
+						int num = rand() % 100 + 1;
+
+						if (play->getLocation()->getCheck() == false) {
+
+							if (num < 50) {
+
+								enemy* newEnem = new enemy(play->getFloor());
+
+								newEnem->setEX(rand() % play->getLocation()->getX() + 1);
+								newEnem->setEY(rand() % play->getLocation()->getY() + 1);
+
+								play->getLocation()->setEnemy(newEnem);
+
+								renderScreen(play, menuSystem);
+
+							}
+							else if ((num < 75) && (num >= 50)) {
+
+								play->getLocation()->setChest();
+
+							}
+
+
+						}
+
+
+
+					}
+
+					renderScreen(play, menuSystem);
+				}
+				else {
+
+					if (render_array[play->getPY()][play->getPX() + 1] == enemyIcon) {
+
+						battleMenu* bMenu = new battleMenu(play, play->getLocation()->getEnemy(), menuSystem);
+						menuSystem->push(bMenu);
+
+						menuSystem->top()->displayMenu();
+
+					}
+					else if (render_array[play->getPY()][play->getPX() + 1] == chest) {
+
+						int num = rand() % 2;
+
+						if (num == 0) {
+							armor* newArmor = new armor();
+
+							cout << "You find " << newArmor->getName() << endl;
+							system("PAUSE");
+							system("CLS");
+							play->addArmor(newArmor);
+
+							play->getLocation()->setChecked();
+							play->getLocation()->setChest();
+
+						}
+						else {
+							weapon* ptr = new weapon();
+
+							cout << "You find " << ptr->getName() << endl;
+							system("PAUSE");
+							system("CLS");
+							play->addWeapon(ptr);
+
+							play->getLocation()->setChecked();
+							play->getLocation()->setChest();
+
+						}
+
+					}
+
+					if (play->getPX() < play->getLocation()->getX()) {
+						render_array[play->getPY()][play->getPX() + 1] = playIcon;
+						render_array[play->getPY()][play->getPX()] = space;
+
+						play->setPX(play->getPX() + 1);
+						updateScreen(prev_render_array, render_array);
+					}
+				}
+
+				break;
+			}
+		}
+	}
+
+}
+
+
+
+/*
+HUGE HUGE shoutout to Cameron on Stackoverflow for this update code
+*/
+void setCursorPosition(int x, int y) {
+	static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	cout.flush();
+
+	COORD coord = { (SHORT)x, (SHORT)y };
+	SetConsoleCursorPosition(hOut, coord);
+}
+
+void updateScreen(char prev_buffer[][MAX_X], char curr_buffer[][MAX_X]) {
+
+	memset((char*)prev_render_array, 0, MAX_X * MAX_Y);
+
+	for (int y = 0; y != MAX_Y; y++) {
+		for (int x = 0; x != MAX_X; x++) {
+			if (curr_buffer[y][x] == prev_buffer[y][x]) {
+				continue;
+			}
+			setCursorPosition(x, y);
+			cout << curr_buffer[y][x];
+		}
+	}
+
+	cout.flush();
+	memcpy((char*)prev_buffer, (char const*)curr_buffer, MAX_X * MAX_Y);
+
+}
+
+void ShowConsoleCursor(bool showFlag) {
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	CONSOLE_CURSOR_INFO cursorInfo;
+
+	GetConsoleCursorInfo(hOut, &cursorInfo);
+	cursorInfo.bVisible = showFlag;
+	SetConsoleCursorInfo(hOut, &cursorInfo);
+}

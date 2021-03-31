@@ -492,6 +492,8 @@ public:
 
 		setName(material + " " + type);
 
+		tempArmor = armorStat;
+
 	}
 
 	int getArmor() {

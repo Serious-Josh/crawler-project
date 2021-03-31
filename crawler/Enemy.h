@@ -5,7 +5,6 @@
 #include <time.h>
 #include <math.h>
 #include "Equipment.h"
-#include "Player.h"
 
 
 using namespace std;
@@ -15,6 +14,7 @@ private:
 	string name;
 	int area, hp, tempHP = 0, level, exp, attack, armor, tempArmor = 0;
 	bool boss = false;
+	int x = NULL, y = NULL;
 
 public:
 
@@ -146,6 +146,21 @@ public:
 
 	}
 
+	void setEX(int i) {
+		x = i;
+	}
+
+	void setEY(int i) {
+		y = i;
+	}
+
+	int getEX() {
+		return x;
+	}
+
+	int getEY() {
+		return y;
+	}
 
 	string getName() {
 		return name;
@@ -251,6 +266,8 @@ ostream& operator<<(ostream& os, enemy* enemy) {
 }
 
 
+
+
 //for bosses attack is just a foundation which is adjusted for different moves/mechanics
 //normal attacks will be slightly lower attack than the base attack while other moves will be stronger/weaker depending on the specific mech
 //list = cave bear, tower knight, 
@@ -260,6 +277,7 @@ class boss : public enemy {
 private:
 	bosses id = bosses::None;
 	bool enrageCheck = false;
+	bool isBoss = true;
 
 	//used for any boss mechanics or whatnot
 	bool extraCheck = false;
@@ -303,23 +321,23 @@ public:
 
 	}
 
-	double bossAttack(bosses id, int playerArmor) {
+	double bossAttack(bosses id, int tempArmor) {
 
 		setArmor(getTempArmor());
 		int temp = rand() % 100 + 1;
 
 		switch (id) {
 		case bosses::Bear: 
-			if (temp > 70) {
+			if (temp < 31) {
 				//slash attack
 				//deals 35% more damage, but lowers boss armor by 20%
 				cout << "The Bear Slashes at you with it's huge claws! " << endl;
 				setArmor(getTempArmor());
 				setTempArmor(getArmor());
 				setArmor(getArmor() * 0.8);
-				return enemyAttack(playerArmor) * 1.35;
+				return (enemyAttack(tempArmor) * 1.35);
 			}
-			else if ((temp > 50) && (temp <= 70)) {
+			else if ((temp < 56) && (temp >= 31)) {
 				//roar attack
 				//lowers the player armor by 20%
 				cout << "The Bear roars wildly, piercing the calm of battle and rattling you! " << endl;
@@ -328,8 +346,9 @@ public:
 			}
 			else {
 				//normal attack ezpz
+				cout << "The bear snaps at you with it's large maw!" << endl;
 				setArmor(getTempArmor());
-				return enemyAttack(playerArmor);
+				return enemyAttack(tempArmor);
 			}
 			break;
 
@@ -350,7 +369,7 @@ public:
 					//deals 45% more damage
 					cout << "The Tower Knight pulls back his sword and slams it down on you with immense force!" << endl;
 					setArmor(getTempArmor());
-					return enemyAttack(playerArmor) * 1.45;
+					return enemyAttack(tempArmor) * 1.45;
 				}
 				else {
 					//leg sweep
@@ -386,10 +405,10 @@ public:
 						cout << "The Tower Knight reels back his first and hurls it at you with extreme speed and power!" << endl;
 
 						if (extraCheck == true) {
-							return enemyAttack(playerArmor) * 1.85;
+							return enemyAttack(tempArmor) * 1.85;
 						}
 						else {
-							return enemyAttack(playerArmor) * 1.2;
+							return enemyAttack(tempArmor) * 1.2;
 						}
 					}
 				}
@@ -403,7 +422,7 @@ public:
 				setArmor(getTempArmor());
 				setTempArmor(getArmor());
 				setArmor(getArmor() * 1.15);
-				return enemyAttack(playerArmor) * 1.15;
+				return enemyAttack(tempArmor) * 1.15;
 			}
 			else if ((temp > 50) && (temp <= 70)) {
 				//defense curl
@@ -417,7 +436,7 @@ public:
 			else {
 				//normal attack
 				setArmor(getTempArmor());
-				return enemyAttack(playerArmor);
+				return enemyAttack(tempArmor);
 			}
 		}
 	}
@@ -428,9 +447,11 @@ public:
 			
 			case bosses::Bear:
 				cout << "You approach the mouth of a cave. You can hear low grumblings come from within... Suddenly a large ball of fur and fury erupts from the opening in the rock: a Cave Bear!" << endl << endl;
+				break;
 
 			case bosses::TK:
 				cout << "You approach a huge statue of a knight guarding the exit door. As you step closer the statue suddenly begins to move! Wielding a greatsword and tower shield, the now living Tower Knight readies himself for combat!" << endl << endl;
+				break;
 			}
 
 		}
@@ -441,6 +462,10 @@ public:
 
 		void setType(bosses type) {
 			id = type;
+		}
+
+		bool getBoss() {
+			return isBoss;
 		}
 
 };

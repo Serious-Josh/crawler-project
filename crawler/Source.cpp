@@ -1,16 +1,10 @@
 //when compiling there's about a million C4244 warnings. these can be ignored, they don't have any affect on functionality
 
-//Current Version: v0.2
+//Current Version: v0.3
 
 /*
 Authors notes:
 
-	I had big plans to add a gui just to make doing stuff easier and make formatting a bit more pretty, but after about half a day I couldn't figure out how to output text so it's on eternal backburner for now.
-
-	-note for myself:
-		the way I might end up doing the debuff system is having enemy/player attack passed through a debuff check method which will be in the damage method
-		something like: playerDamage(debuffCheck(enemyAttack(player->getArmor())))
-		makes combat that much more of a nightmare, but should work decently well. will need to do the negative double checking like I have currently with -armor% and -weapon%
 
 */
 
@@ -28,6 +22,9 @@ Authors notes:
 
 using namespace std;
 
+int roomCount = (rand() % 9) + 4;
+
+
 
 vector<vector<int>> graph;
 stack<menu*>* menuStack = new stack<menu*>;
@@ -35,16 +32,17 @@ vector<room*> roomList;
 
 vector<vector<room*>> floors;
 
-void initializeGraph(vector<vector<int>>& graph);
+void initializeFloor(vector<vector<int>>& graph);
 
 int main()
 {
 	srand(time(NULL));
 
-	initializeGraph(graph);
-	floors.push_back(roomList);
-
 	bool startUp = true;
+
+	initializeFloor(graph);
+
+	floors.push_back(roomList);
 
 	cout << "Hi there! I'm Felix and I'll be your furr-ocious feline companion on your adventure! Been a while since I've helped an adventurer, but you'll see I'm quite the cat-ch!" << endl;
 	cout << "What's your name stranger?" << endl;
@@ -87,11 +85,26 @@ int main()
 
 	int floorCount = 0;
 
+	mMenu* main = new mMenu(play, roomList, menuStack);
+	menuStack->push(main);
+
+	menuStack->top()->displayMenu();
 
 	do {
 
 		if (startUp != true) {
-			initializeGraph(graph);
+			initializeFloor(graph);
+
+			for (int i = 0; i < roomList.size(); i++) {
+
+				if ((roomList[i]->getWDoor() != NULL) || (roomList[i]->getEDoor() != NULL) || (roomList[i]->getNDoor() != NULL) || (roomList[i]->getSDoor() != NULL)) {
+					continue;
+				}
+				else {
+					roomList[i]->setDoors();
+				}
+			}
+
 			floors.push_back(roomList);
 		}
 
@@ -116,17 +129,17 @@ int main()
 	
 }
 
-void initializeGraph(vector<vector<int>>& graph) {
+void initializeFloor(vector<vector<int>>& graph) {
 
 	int roomCount = (rand() % 9) + 4;
 
-	//adding new room objects to the room vector
+	//generating new rooms in roomList
 	for (int i = 0; i < roomCount; i++) {
 		room* newRoom = new room();
 		roomList.push_back(newRoom);
 	}
 
-	//generating actual rooms
+	//making graph a 2d vector using graph
 	for (int k = 0; k < roomCount; k++) {
 		vector<int> newVec;
 
@@ -137,15 +150,15 @@ void initializeGraph(vector<vector<int>>& graph) {
 		graph.push_back(newVec);
 	}
 
-	//initializing connections
-	//count is for current room
+	//count is target room
+	//count2 is secondary room
 	int count = 0, count2 = 0;
 
 	//looping through each room
 	while (count < roomCount) {
 
-		//temp is number of connections per room
-		int temp = (rand() % 4) + 1;
+		//generating number of connections for all rooms
+		int temp = (rand() % 3) + 2;
 
 		//checking if there's already connections
 		//if so, then don't generate more connections
@@ -153,17 +166,27 @@ void initializeGraph(vector<vector<int>>& graph) {
 
 			//if connection, then skip it
 			if (graph[count][l] == 1) {
+				
 				count++;
 				break;
 			}
+
+			//if there are no connections
+			//if temp variable l reaches the last room and no connections
 			else if (l == (roomCount - 1)) {
 
 				//generating connections for each room
 				for (int i = 0; i < temp; i++) {
 
+
+					//random room target room will be connected to
 					count2 = (rand() % roomCount);
 
+
+					//if they're not the same room
 					if (count2 != count) {
+
+
 
 						if (graph[count][count2] == 1) {
 							i--;
@@ -183,18 +206,31 @@ void initializeGraph(vector<vector<int>>& graph) {
 								if ((roomList[count]->getWest() == nullptr) && (roomList[count2]->getEast() == nullptr)) {
 									roomList[count]->setWest(roomList[count2]);
 									roomList[count2]->setEast(roomList[count]);
+
+									roomList[count]->setWDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setEDoor(rand() % roomList[count2]->getY() + 1);
+
 								}
 								else if ((roomList[count]->getEast() == nullptr) && (roomList[count2]->getWest() == nullptr)) {
 									roomList[count]->setEast(roomList[count2]);
 									roomList[count2]->setWest(roomList[count]);
+
+									roomList[count]->setEDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setWDoor(rand() % roomList[count2]->getY() + 1);
 								}
 								else if ((roomList[count]->getNorth() == nullptr) && (roomList[count2]->getSouth() == nullptr)) {
 									roomList[count]->setNorth(roomList[count2]);
 									roomList[count2]->setSouth(roomList[count]);
+
+									roomList[count]->setNDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setSDoor(rand() % roomList[count2]->getX() + 1);
 								}
 								else {
 									roomList[count]->setSouth(roomList[count2]);
-									roomList[count2]->setSouth(roomList[count]);
+									roomList[count2]->setNorth(roomList[count]);
+
+									roomList[count]->setSDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setNDoor(rand() % roomList[count2]->getX() + 1);
 								}
 							}
 							//east
@@ -202,18 +238,30 @@ void initializeGraph(vector<vector<int>>& graph) {
 								if ((roomList[count]->getEast() == nullptr) && (roomList[count2]->getWest() == nullptr)) {
 									roomList[count]->setEast(roomList[count2]);
 									roomList[count2]->setWest(roomList[count]);
+
+									roomList[count]->setEDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setWDoor(rand() % roomList[count2]->getY() + 1);
 								}
 								else if ((roomList[count]->getWest() == nullptr) && (roomList[count2]->getEast() == nullptr)) {
 									roomList[count]->setWest(roomList[count2]);
 									roomList[count2]->setEast(roomList[count]);
+
+									roomList[count]->setWDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setEDoor(rand() % roomList[count2]->getY() + 1);
 								}
 								else if ((roomList[count]->getNorth() == nullptr) && (roomList[count2]->getSouth() == nullptr)) {
 									roomList[count]->setNorth(roomList[count2]);
 									roomList[count2]->setSouth(roomList[count]);
+
+									roomList[count]->setNDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setSDoor(rand() % roomList[count2]->getX() + 1);
 								}
 								else {
 									roomList[count]->setSouth(roomList[count2]);
-									roomList[count2]->setSouth(roomList[count]);
+									roomList[count2]->setNorth(roomList[count]);
+
+									roomList[count]->setSDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setNDoor(rand() % roomList[count2]->getX() + 1);
 								}
 							}
 							//north
@@ -221,37 +269,61 @@ void initializeGraph(vector<vector<int>>& graph) {
 								if ((roomList[count]->getNorth() == nullptr) && (roomList[count2]->getSouth() == nullptr)) {
 									roomList[count]->setNorth(roomList[count2]);
 									roomList[count2]->setSouth(roomList[count]);
+
+									roomList[count]->setNDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setSDoor(rand() % roomList[count2]->getX() + 1);
 								}
 								else if ((roomList[count]->getSouth() == nullptr) && (roomList[count2]->getNorth() == nullptr)) {
 									roomList[count]->setSouth(roomList[count2]);
-									roomList[count2]->setSouth(roomList[count]);
+									roomList[count2]->setNorth(roomList[count]);
+
+									roomList[count]->setSDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setNDoor(rand() % roomList[count2]->getX() + 1);
 								}
 								else if ((roomList[count]->getEast() == nullptr) && (roomList[count2]->getWest() == nullptr)) {
 									roomList[count]->setEast(roomList[count2]);
 									roomList[count2]->setWest(roomList[count]);
+
+									roomList[count]->setEDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setWDoor(rand() % roomList[count2]->getY() + 1);
 								}
 								else {
 									roomList[count]->setWest(roomList[count2]);
 									roomList[count2]->setEast(roomList[count]);
+
+									roomList[count]->setWDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setEDoor(rand() % roomList[count2]->getY() + 1);
 								}
 							}
 							//south
 							else if (temp == 4) {
 								if ((roomList[count]->getSouth() == nullptr) && (roomList[count2]->getNorth() == nullptr)) {
 									roomList[count]->setSouth(roomList[count2]);
-									roomList[count2]->setSouth(roomList[count]);
+									roomList[count2]->setNorth(roomList[count]);
+
+									roomList[count]->setSDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setNDoor(rand() % roomList[count2]->getX() + 1);
 								}
 								else if ((roomList[count]->getNorth() == nullptr) && (roomList[count2]->getSouth() == nullptr)) {
 									roomList[count]->setNorth(roomList[count2]);
 									roomList[count2]->setSouth(roomList[count]);
+
+									roomList[count]->setNDoor(rand() % roomList[count]->getX() + 1);
+									roomList[count2]->setSDoor(rand() % roomList[count2]->getX() + 1);
 								}
 								else if ((roomList[count]->getEast() == nullptr) && (roomList[count2]->getWest() == nullptr)) {
 									roomList[count]->setEast(roomList[count2]);
 									roomList[count2]->setWest(roomList[count]);
+
+									roomList[count]->setEDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setWDoor(rand() % roomList[count2]->getY() + 1);
 								}
 								else {
 									roomList[count]->setWest(roomList[count2]);
 									roomList[count2]->setEast(roomList[count]);
+
+									roomList[count]->setWDoor(rand() % roomList[count]->getY() + 1);
+									roomList[count2]->setEDoor(rand() % roomList[count2]->getY() + 1);
 								}
 							}
 
@@ -265,4 +337,5 @@ void initializeGraph(vector<vector<int>>& graph) {
 			}
 		}
 	}
+
 }
